@@ -32,7 +32,7 @@ app = Flask(__name__)
 # this from the UI by entering their own comma-separated tickers.
 DEFAULT_TICKERS = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AMD",
-    "NFLX", "JPM", "BAC", "C", "WMT", "DIS", "KO", "PEP",
+    "SPCX", "NFLX", "JPM", "BAC", "C", "WMT", "DIS", "KO", "PEP",
     "XOM", "CVX", "PFE", "JNJ", "INTC", "CRM", "ORCL", "ADBE",
 ]
 
@@ -248,9 +248,91 @@ def build_payload(tickers: list[str]) -> dict:
     }
 
 
+# Historical price ranges -> (yfinance period, interval).
+# Intervals are chosen so each range returns a sensible number of points.
+HISTORY_RANGES = {
+    "1D": ("1d", "5m"),
+    "1W": ("5d", "30m"),
+    "1M": ("1mo", "1d"),
+    "3M": ("3mo", "1d"),
+    "6M": ("6mo", "1d"),
+    "YTD": ("ytd", "1d"),
+    "1Y": ("1y", "1d"),
+    "5Y": ("5y", "1wk"),
+    "10Y": ("10y", "1mo"),
+}
+
+# Cache TTL per range (seconds): intraday refreshes often, long ranges rarely.
+_HISTORY_TTL = {
+    "1D": 60, "1W": 300, "1M": 1800, "3M": 3600,
+    "6M": 3600, "YTD": 3600, "1Y": 21600, "5Y": 86400, "10Y": 86400,
+}
+
+
+def _history_cache_path(symbol: str, range_key: str) -> str:
+    safe = "".join(c for c in symbol if c.isalnum() or c in ("-", ".", "_"))
+    return os.path.join(CACHE_DIR, f"hist_{safe}_{range_key}.json")
+
+
+def fetch_history(symbol: str, range_key: str) -> dict:
+    """Fetch a close-price time series for one ticker/range. Never raises."""
+    symbol = symbol.upper().strip()
+    range_key = range_key.upper().strip()
+    if range_key not in HISTORY_RANGES:
+        range_key = "1M"
+    period, interval = HISTORY_RANGES[range_key]
+
+    # Serve from disk cache when fresh to avoid Yahoo Finance rate limits.
+    path = _history_cache_path(symbol, range_key)
+    ttl = _HISTORY_TTL.get(range_key, 3600)
+    try:
+        if os.path.exists(path) and (time.time() - os.path.getmtime(path)) < ttl:
+            with open(path, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+    except Exception:
+        pass
+
+    result = {"symbol": symbol, "range": range_key, "points": [], "error": None}
+    try:
+        ticker = yf.Ticker(symbol)
+        df = _with_retry(lambda: ticker.history(period=period, interval=interval))
+        if df is not None and not df.empty:
+            points = []
+            for idx, row in df.iterrows():
+                close = _safe_float(row.get("Close"))
+                if close is None:
+                    continue
+                try:
+                    ts = idx.isoformat()
+                except Exception:
+                    ts = str(idx)
+                points.append({"t": ts, "c": close})
+            result["points"] = points
+        if result["points"]:
+            try:
+                os.makedirs(CACHE_DIR, exist_ok=True)
+                with open(path, "w", encoding="utf-8") as fh:
+                    json.dump(result, fh)
+            except Exception:
+                pass
+    except Exception as exc:  # never let a bad ticker break the endpoint
+        result["error"] = str(exc)
+
+    return result
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/api/history")
+def history():
+    symbol = request.args.get("symbol", "").strip()
+    range_key = request.args.get("range", "1M").strip()
+    if not symbol:
+        return jsonify({"error": "Missing symbol", "points": []}), 400
+    return jsonify(fetch_history(symbol, range_key))
 
 
 @app.route("/api/recommendations")

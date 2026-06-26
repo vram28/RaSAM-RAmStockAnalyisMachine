@@ -88,6 +88,34 @@
     </p>
   </main>
 
+  <!-- Stock price chart modal -->
+  <div id="chartModal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h2 id="chartTitle">—</h2>
+          <p id="chartSubtitle" class="modal-sub"></p>
+        </div>
+        <button id="chartClose" class="modal-close" aria-label="Close chart">&times;</button>
+      </div>
+      <div class="range-tabs" id="rangeTabs">
+        <button data-range="1D" class="range-btn">1D</button>
+        <button data-range="1W" class="range-btn">1W</button>
+        <button data-range="1M" class="range-btn active">1M</button>
+        <button data-range="3M" class="range-btn">3M</button>
+        <button data-range="6M" class="range-btn">6M</button>
+        <button data-range="YTD" class="range-btn">YTD</button>
+        <button data-range="1Y" class="range-btn">1Y</button>
+        <button data-range="5Y" class="range-btn">5Y</button>
+        <button data-range="10Y" class="range-btn">10Y</button>
+      </div>
+      <div class="chart-area">
+        <div id="chartStatus" class="chart-status"></div>
+        <div id="chartContainer" class="chart-container"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

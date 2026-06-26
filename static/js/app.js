@@ -95,7 +95,7 @@ function renderTable() {
     .map((s) => {
       const badgeCls = RATING_CLASS[s.recommendation] || "no-rating";
       return `<tr>
-        <td class="sym-cell" data-label="Symbol">${s.symbol}</td>
+        <td class="sym-cell clickable" data-label="Symbol" data-symbol="${s.symbol}" role="button" tabindex="0" title="View price chart for ${s.symbol}">${s.symbol}</td>
         <td class="company" data-label="Company" title="${s.name}">${s.name}</td>
         <td class="num" data-label="Price">${fmtMoney(s.price)}</td>
         <td class="num ${pctClass(s.changePercent)}" data-label="Day %">${fmtPct(s.changePercent)}</td>
@@ -316,6 +316,187 @@ function tick() {
     checkNow();
   }
 }
+
+// ------------------------------------------------------------------
+// Stock price chart modal
+// ------------------------------------------------------------------
+
+const chartEls = {
+  overlay: document.getElementById("chartModal"),
+  title: document.getElementById("chartTitle"),
+  subtitle: document.getElementById("chartSubtitle"),
+  close: document.getElementById("chartClose"),
+  tabs: document.getElementById("rangeTabs"),
+  status: document.getElementById("chartStatus"),
+  container: document.getElementById("chartContainer"),
+};
+
+let chartSymbol = null;
+let chartRange = "1M";
+let chartFetchId = 0;
+
+function openChart(symbol) {
+  chartSymbol = symbol;
+  chartRange = "1M";
+  chartEls.title.textContent = symbol;
+  chartEls.subtitle.textContent = "";
+  [...chartEls.tabs.children].forEach((b) =>
+    b.classList.toggle("active", b.dataset.range === chartRange)
+  );
+  chartEls.overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+  loadChart();
+}
+
+function closeChart() {
+  chartEls.overlay.hidden = true;
+  document.body.style.overflow = "";
+  chartSymbol = null;
+}
+
+async function loadChart() {
+  if (!chartSymbol) return;
+  const fetchId = ++chartFetchId;
+  chartEls.status.classList.remove("error");
+  chartEls.status.textContent = `Loading ${chartSymbol} • ${chartRange}…`;
+  chartEls.container.innerHTML = "";
+  try {
+    const url =
+      "/api/history?symbol=" +
+      encodeURIComponent(chartSymbol) +
+      "&range=" +
+      encodeURIComponent(chartRange);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    const data = await res.json();
+    if (fetchId !== chartFetchId) return; // a newer request superseded this one
+    if (data.error) throw new Error(data.error);
+    const points = data.points || [];
+    if (!points.length) {
+      chartEls.status.textContent = "No price data available for this range.";
+      return;
+    }
+    chartEls.status.textContent = "";
+    renderChart(points);
+  } catch (err) {
+    if (fetchId !== chartFetchId) return;
+    chartEls.status.classList.add("error");
+    chartEls.status.textContent = "Error: " + err.message;
+  }
+}
+
+function renderChart(points) {
+  const W = 820,
+    H = 340,
+    padL = 60,
+    padR = 16,
+    padT = 16,
+    padB = 34;
+  const closes = points.map((p) => p.c);
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const span = max - min || 1;
+  const n = points.length;
+  const x = (i) => padL + (i / (n - 1 || 1)) * (W - padL - padR);
+  const y = (v) => padT + (1 - (v - min) / span) * (H - padT - padB);
+
+  const first = closes[0];
+  const last = closes[n - 1];
+  const up = last >= first;
+  const color = up ? "#2ec16b" : "#ff5d6c";
+
+  let line = "";
+  points.forEach((p, i) => {
+    line += (i === 0 ? "M" : "L") + x(i).toFixed(1) + " " + y(p.c).toFixed(1) + " ";
+  });
+  const baseline = (H - padB).toFixed(1);
+  const area =
+    line + `L${x(n - 1).toFixed(1)} ${baseline} L${x(0).toFixed(1)} ${baseline} Z`;
+
+  // Horizontal gridlines + price labels
+  const ticks = 4;
+  let grid = "";
+  for (let i = 0; i <= ticks; i++) {
+    const val = min + (span * i) / ticks;
+    const yy = y(val);
+    grid += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(
+      1
+    )}" class="grid-line"/>`;
+    grid += `<text x="${padL - 8}" y="${(yy + 4).toFixed(
+      1
+    )}" class="axis-label y">${val.toFixed(2)}</text>`;
+  }
+
+  const fmtDate = (t) => {
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return "";
+    const longRange = chartRange === "5Y" || chartRange === "10Y";
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      ...(longRange ? { year: "numeric" } : {}),
+    });
+  };
+  const xlabels =
+    `<text x="${padL}" y="${H - 10}" class="axis-label x start">${fmtDate(
+      points[0].t
+    )}</text>` +
+    `<text x="${W - padR}" y="${H - 10}" class="axis-label x end">${fmtDate(
+      points[n - 1].t
+    )}</text>`;
+
+  const change = last - first;
+  const changePct = (change / (first || 1)) * 100;
+  const sign = change >= 0 ? "+" : "";
+  chartEls.subtitle.innerHTML =
+    `<span class="${up ? "up" : "down"}">$${last.toFixed(2)} ` +
+    `${sign}${change.toFixed(2)} (${sign}${changePct.toFixed(2)}%)</span> ` +
+    `<span class="muted">over ${chartRange}</span>`;
+
+  const gradId = "grad" + Math.random().toString(36).slice(2);
+  chartEls.container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="price-chart" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${chartSymbol} ${chartRange} price chart">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${grid}
+      <path d="${area}" fill="url(#${gradId})" stroke="none"/>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${xlabels}
+    </svg>`;
+}
+
+// Open the chart when a ticker symbol is clicked (or activated via keyboard).
+els.body.addEventListener("click", (e) => {
+  const cell = e.target.closest(".sym-cell");
+  if (cell && cell.dataset.symbol) openChart(cell.dataset.symbol);
+});
+els.body.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const cell = e.target.closest(".sym-cell");
+  if (cell && cell.dataset.symbol) {
+    e.preventDefault();
+    openChart(cell.dataset.symbol);
+  }
+});
+
+chartEls.close.addEventListener("click", closeChart);
+chartEls.overlay.addEventListener("click", (e) => {
+  if (e.target === chartEls.overlay) closeChart();
+});
+chartEls.tabs.addEventListener("click", (e) => {
+  const btn = e.target.closest(".range-btn");
+  if (!btn) return;
+  chartRange = btn.dataset.range;
+  [...chartEls.tabs.children].forEach((b) => b.classList.toggle("active", b === btn));
+  loadChart();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !chartEls.overlay.hidden) closeChart();
+});
 
 els.btn.addEventListener("click", checkNow);
 els.input.addEventListener("keydown", (e) => {
