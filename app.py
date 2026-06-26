@@ -1,5 +1,5 @@
 """
-Stock Analyst Recommendations Dashboard
+RaSAM - RAm Stock Analyser Machine
 ----------------------------------------
 A small Flask web app that aggregates analyst recommendations (the same
 firm-level ratings published by Morningstar, BofA, Citi, Morgan Stanley, etc.)
