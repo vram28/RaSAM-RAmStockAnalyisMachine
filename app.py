@@ -274,6 +274,42 @@ def _history_cache_path(symbol: str, range_key: str) -> str:
     return os.path.join(CACHE_DIR, f"hist_{safe}_{range_key}.json")
 
 
+def _fetch_quote_stats(ticker: "yf.Ticker") -> dict:
+    """Open / High / Low / Close / 52-week high via the lightweight fast_info."""
+    stats = {
+        "open": None,
+        "dayHigh": None,
+        "dayLow": None,
+        "close": None,
+        "fiftyTwoWeekHigh": None,
+    }
+    try:
+        fi = _with_retry(lambda: ticker.fast_info)
+        if fi is None:
+            return stats
+
+        def g(*keys):
+            for k in keys:
+                val = None
+                try:
+                    val = fi[k]
+                except Exception:
+                    val = getattr(fi, k, None)
+                f = _safe_float(val)
+                if f is not None:
+                    return f
+            return None
+
+        stats["open"] = g("open", "regularMarketOpen")
+        stats["dayHigh"] = g("dayHigh", "day_high")
+        stats["dayLow"] = g("dayLow", "day_low")
+        stats["close"] = g("lastPrice", "last_price", "regularMarketPrice")
+        stats["fiftyTwoWeekHigh"] = g("yearHigh", "year_high", "fiftyTwoWeekHigh")
+    except Exception:
+        pass
+    return stats
+
+
 def fetch_history(symbol: str, range_key: str) -> dict:
     """Fetch a close-price time series for one ticker/range. Never raises."""
     symbol = symbol.upper().strip()
@@ -292,7 +328,7 @@ def fetch_history(symbol: str, range_key: str) -> dict:
     except Exception:
         pass
 
-    result = {"symbol": symbol, "range": range_key, "points": [], "error": None}
+    result = {"symbol": symbol, "range": range_key, "points": [], "stats": {}, "error": None}
     try:
         ticker = yf.Ticker(symbol)
         df = _with_retry(lambda: ticker.history(period=period, interval=interval))
@@ -308,6 +344,7 @@ def fetch_history(symbol: str, range_key: str) -> dict:
                     ts = str(idx)
                 points.append({"t": ts, "c": close})
             result["points"] = points
+        result["stats"] = _fetch_quote_stats(ticker)
         if result["points"]:
             try:
                 os.makedirs(CACHE_DIR, exist_ok=True)

@@ -38,6 +38,11 @@ function fmtPct(v) {
   const sign = v > 0 ? "+" : "";
   return sign + v.toFixed(2) + "%";
 }
+function fmtMoneyDelta(v) {
+  if (v == null) return "—";
+  const sign = v > 0 ? "+" : v < 0 ? "-" : "";
+  return sign + "$" + Math.abs(v).toFixed(2);
+}
 function pctClass(v) {
   if (v == null) return "";
   return v > 0 ? "up" : v < 0 ? "down" : "";
@@ -94,11 +99,13 @@ function renderTable() {
   els.body.innerHTML = rows
     .map((s) => {
       const badgeCls = RATING_CLASS[s.recommendation] || "no-rating";
+      const dayChange =
+        s.price != null && s.previousClose != null ? s.price - s.previousClose : null;
       return `<tr>
         <td class="sym-cell clickable" data-label="Symbol" data-symbol="${s.symbol}" role="button" tabindex="0" title="View price chart for ${s.symbol}">${s.symbol}</td>
         <td class="company" data-label="Company" title="${s.name}">${s.name}</td>
         <td class="num" data-label="Price">${fmtMoney(s.price)}</td>
-        <td class="num ${pctClass(s.changePercent)}" data-label="Day %">${fmtPct(s.changePercent)}</td>
+        <td class="num ${pctClass(s.changePercent)}" data-label="Day Change"><span class="day-change">${fmtMoneyDelta(dayChange)}</span> <span class="day-pct">${fmtPct(s.changePercent)}</span></td>
         <td data-label="Recommendation"><span class="badge ${badgeCls}">${s.recommendation}</span></td>
         <td class="num" data-label="Analysts">${s.numberOfAnalysts ?? "—"}</td>
         <td class="num" data-label="Target">${fmtMoney(s.targetMeanPrice)}</td>
@@ -329,6 +336,7 @@ const chartEls = {
   tabs: document.getElementById("rangeTabs"),
   status: document.getElementById("chartStatus"),
   container: document.getElementById("chartContainer"),
+  stats: document.getElementById("chartStats"),
 };
 
 let chartSymbol = null;
@@ -360,6 +368,7 @@ async function loadChart() {
   chartEls.status.classList.remove("error");
   chartEls.status.textContent = `Loading ${chartSymbol} • ${chartRange}…`;
   chartEls.container.innerHTML = "";
+  chartEls.stats.innerHTML = "";
   try {
     const url =
       "/api/history?symbol=" +
@@ -378,6 +387,7 @@ async function loadChart() {
     }
     chartEls.status.textContent = "";
     renderChart(points);
+    renderChartStats(data.stats || {});
   } catch (err) {
     if (fetchId !== chartFetchId) return;
     chartEls.status.classList.add("error");
@@ -467,6 +477,24 @@ function renderChart(points) {
       <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${xlabels}
     </svg>`;
+}
+
+function renderChartStats(stats) {
+  const items = [
+    ["Open", stats.open],
+    ["High", stats.dayHigh],
+    ["Low", stats.dayLow],
+    ["Close", stats.close],
+    ["52-Week High", stats.fiftyTwoWeekHigh],
+  ];
+  chartEls.stats.innerHTML = items
+    .map(
+      ([label, val]) =>
+        `<div class="stat"><span class="stat-l">${label}</span><span class="stat-v">${fmtMoney(
+          val
+        )}</span></div>`
+    )
+    .join("");
 }
 
 // Open the chart when a ticker symbol is clicked (or activated via keyboard).

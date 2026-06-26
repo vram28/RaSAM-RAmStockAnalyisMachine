@@ -139,6 +139,11 @@ main { padding: 24px 28px 48px; max-width: 1280px; margin: 0 auto; }
 .up { color: var(--green); }
 .down { color: var(--red); }
 
+/* Day change cell: dollar delta + percent */
+.day-pct { opacity: 0.85; font-size: 0.92em; }
+.day-change + .day-pct::before { content: "("; }
+.day-change + .day-pct::after { content: ")"; }
+
 .table-card { padding: 0; overflow: hidden; }
 .table-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -296,6 +301,31 @@ tbody tr:hover { background: rgba(79, 140, 255, 0.06); }
 .price-chart .axis-label.x.start { text-anchor: start; }
 .price-chart .axis-label.x.end { text-anchor: end; }
 
+/* Open / High / Low / Close / 52-week high stats under the chart */
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+.chart-stats:empty { display: none; }
+.chart-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.chart-stats .stat-l {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chart-stats .stat-v { font-size: 16px; font-weight: 700; }
+
 /* ------------------------------------------------------------------ *
  * Responsive layout
  * Breakpoints:
@@ -419,6 +449,7 @@ tbody tr:hover { background: rgba(79, 140, 255, 0.06); }
   .range-tabs { padding: 10px 14px; }
   .range-btn { flex: 1 1 auto; text-align: center; padding: 7px 8px; }
   .chart-area { padding: 12px 14px 18px; }
+  .chart-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Small phones */
