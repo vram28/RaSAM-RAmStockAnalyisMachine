@@ -1,4 +1,4 @@
-# RaSAM - RAm Stock Analyser Machine
+# RaSAM - Ram Stock Analyser Machine
 
 A small web app that aggregates analyst recommendations (the same firm-level
 ratings published by Morningstar, Bank of America, Citi, Morgan Stanley, etc.)
