@@ -1,4 +1,4 @@
-# Production image for the RaSAM - RAm Stock Analyser Machine dashboard.
+# Production image for the RaSAM - Ram Stock Analyser Machine dashboard.
 FROM python:3.12-slim
 
 # Avoid .pyc files and force unbuffered logging.

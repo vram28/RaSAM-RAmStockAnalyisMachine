@@ -13,10 +13,16 @@ signals.
 ## Run it
 
 ```bash
-cd /Users/rv/temp/stocks
+# Clone the repository
+git clone https://github.com/vram28/RaSAM-RAmStockAnalyisMachine.git
+cd RaSAM-RAmStockAnalyisMachine
+
+# Set up a virtual environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# Run the app
 python app.py
 ```
 
@@ -41,7 +47,12 @@ Flask dev server.
 Electric Eel runs Docker natively and accepts a compose file directly.
 
 1. **Copy the project to a dataset**, e.g. `/mnt/<pool>/apps/stocks`
-   (via SMB, `scp`, or `git clone`).
+   (via SMB, `scp`, or `git clone`):
+
+   ```bash
+   cd /mnt/<pool>/apps
+   git clone https://github.com/vram28/RaSAM-RAmStockAnalyisMachine.git stocks
+   ```
 2. **SSH into TrueNAS** and build the image (TrueNAS is x86, so build it there):
 
    ```bash
