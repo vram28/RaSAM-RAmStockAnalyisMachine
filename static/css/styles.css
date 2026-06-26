@@ -182,7 +182,129 @@ tbody tr:hover { background: rgba(79, 140, 255, 0.06); }
 
 .disclaimer { color: var(--muted); font-size: 12px; margin-top: 18px; line-height: 1.5; }
 
-@media (max-width: 900px) {
+/* ------------------------------------------------------------------ *
+ * Responsive layout
+ * Breakpoints:
+ *   <= 1024px  large tablet / small laptop  -> 2-col summary grid
+ *   <= 760px   tablet / large phone         -> stacked controls
+ *   <= 600px   phone                        -> table collapses to cards
+ *   <= 380px   small phone                  -> tighter spacing
+ * ------------------------------------------------------------------ */
+
+/* Large tablets / small laptops */
+@media (max-width: 1024px) {
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .summary-grid .counts { grid-column: 1 / -1; }
+  main { padding: 20px 20px 40px; }
+  .topbar { padding: 16px 20px; }
+}
+
+/* Tablets and large phones */
+@media (max-width: 760px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .brand { justify-content: flex-start; }
+  .topbar h1 { font-size: 17px; }
+  .controls {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  #tickerInput {
+    width: 100%;
+    flex: 1 1 100%;
+    order: 1;
+  }
+  .auto-toggle { order: 2; }
+  .btn-primary {
+    order: 3;
+    margin-left: auto;
+  }
   .summary-grid { grid-template-columns: 1fr; }
-  #tickerInput { width: 180px; }
+  .summary-grid .counts { grid-column: auto; }
+  main { padding: 18px 16px 40px; }
+  .table-header { padding: 16px 14px 10px; }
+}
+
+/* Phones — collapse the table into stacked cards */
+@media (max-width: 600px) {
+  .table-wrap { overflow-x: visible; }
+
+  #stocksTable thead { display: none; }
+
+  #stocksTable,
+  #stocksTable tbody,
+  #stocksTable tr,
+  #stocksTable td {
+    display: block;
+    width: 100%;
+  }
+
+  #stocksTable tr {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 0 12px 12px;
+    padding: 6px 4px;
+    background: var(--panel-2);
+  }
+  #stocksTable tr:first-child { margin-top: 12px; }
+
+  #stocksTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(42, 54, 80, 0.5);
+  }
+  #stocksTable td:last-child { border-bottom: none; }
+  #stocksTable td.num { text-align: right; }
+
+  /* Label each cell with the column name via data-label set in JS */
+  #stocksTable td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  /* The symbol cell acts as a card header */
+  #stocksTable td.sym-cell {
+    font-size: 16px;
+    background: rgba(79, 140, 255, 0.06);
+    border-radius: 8px;
+  }
+
+  .company { max-width: none; white-space: normal; text-align: right; }
+  .firm-actions { max-width: none; text-align: right; }
+  .firm-actions .fa-item { line-height: 1.6; }
+
+  tbody tr:hover { background: var(--panel-2); }
+
+  .filters { width: 100%; }
+  .chip { flex: 1 1 auto; text-align: center; }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  .topbar h1 { font-size: 15px; }
+  .sub { font-size: 12px; }
+  .logo { font-size: 24px; }
+  .count-chip { min-width: 72px; }
+  .count-chip .n { font-size: 18px; }
+  main { padding: 14px 10px 32px; }
+  #stocksTable tr { margin: 0 8px 12px; }
+}
+
+/* Honour reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }

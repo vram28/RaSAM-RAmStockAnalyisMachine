@@ -95,15 +95,15 @@ function renderTable() {
     .map((s) => {
       const badgeCls = RATING_CLASS[s.recommendation] || "no-rating";
       return `<tr>
-        <td class="sym-cell">${s.symbol}</td>
-        <td class="company" title="${s.name}">${s.name}</td>
-        <td class="num">${fmtMoney(s.price)}</td>
-        <td class="num ${pctClass(s.changePercent)}">${fmtPct(s.changePercent)}</td>
-        <td><span class="badge ${badgeCls}">${s.recommendation}</span></td>
-        <td class="num">${s.numberOfAnalysts ?? "—"}</td>
-        <td class="num">${fmtMoney(s.targetMeanPrice)}</td>
-        <td class="num ${pctClass(s.upsidePercent)}">${fmtPct(s.upsidePercent)}</td>
-        <td class="firm-actions">${renderFirmActions(s.firmActions)}</td>
+        <td class="sym-cell" data-label="Symbol">${s.symbol}</td>
+        <td class="company" data-label="Company" title="${s.name}">${s.name}</td>
+        <td class="num" data-label="Price">${fmtMoney(s.price)}</td>
+        <td class="num ${pctClass(s.changePercent)}" data-label="Day %">${fmtPct(s.changePercent)}</td>
+        <td data-label="Recommendation"><span class="badge ${badgeCls}">${s.recommendation}</span></td>
+        <td class="num" data-label="Analysts">${s.numberOfAnalysts ?? "—"}</td>
+        <td class="num" data-label="Target">${fmtMoney(s.targetMeanPrice)}</td>
+        <td class="num ${pctClass(s.upsidePercent)}" data-label="Upside">${fmtPct(s.upsidePercent)}</td>
+        <td class="firm-actions" data-label="Recent Firm Actions">${renderFirmActions(s.firmActions)}</td>
       </tr>`;
     })
     .join("");
