@@ -63,16 +63,16 @@
       </div>
       <div class="table-wrap">
         <table id="stocksTable">
-          <thead>
+          <thead id="stocksHead">
             <tr>
-              <th>Symbol</th>
-              <th>Company</th>
-              <th class="num">Price</th>
-              <th class="num">Day Change</th>
-              <th>Recommendation</th>
-              <th class="num">Analysts</th>
-              <th class="num">Target</th>
-              <th class="num">Upside</th>
+              <th class="sortable" data-sort="symbol">Symbol</th>
+              <th class="sortable" data-sort="name">Company</th>
+              <th class="num sortable" data-sort="price">Price</th>
+              <th class="num sortable" data-sort="changePercent">Day Change</th>
+              <th class="sortable" data-sort="recommendationMean">Recommendation</th>
+              <th class="num sortable" data-sort="numberOfAnalysts">Analysts</th>
+              <th class="num sortable" data-sort="targetMeanPrice">Target</th>
+              <th class="num sortable" data-sort="upsidePercent">Upside</th>
               <th>Recent Firm Actions</th>
             </tr>
           </thead>

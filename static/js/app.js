@@ -8,6 +8,7 @@ const els = {
   winners: document.getElementById("winnersList"),
   losers: document.getElementById("losersList"),
   body: document.getElementById("stocksBody"),
+  head: document.getElementById("stocksHead"),
   filters: document.getElementById("filters"),
   autoRefresh: document.getElementById("autoRefresh"),
   marketBadge: document.getElementById("marketBadge"),
@@ -15,6 +16,12 @@ const els = {
 
 let lastStocks = [];
 let activeFilter = "All";
+
+// --- Sort state ---
+// null sortKey => use the server's default ordering (best rating first).
+let sortKey = null;
+let sortDir = 1; // 1 = ascending, -1 = descending
+const STRING_KEYS = new Set(["symbol", "name"]);
 
 // --- Auto-refresh state ---
 const AUTO_REFRESH_MS = 60000; // refresh every minute
@@ -86,10 +93,42 @@ function renderFirmActions(actions) {
     .join("");
 }
 
+function sortRows(rows) {
+  if (!sortKey) return rows;
+  const isString = STRING_KEYS.has(sortKey);
+  return [...rows].sort((a, b) => {
+    let av = a[sortKey];
+    let bv = b[sortKey];
+    if (isString) {
+      av = (av ?? "").toString().toLowerCase();
+      bv = (bv ?? "").toString().toLowerCase();
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return 1 * sortDir;
+      return 0;
+    }
+    // Numbers: push null/undefined to the bottom regardless of direction.
+    const aNull = av == null;
+    const bNull = bv == null;
+    if (aNull && bNull) return 0;
+    if (aNull) return 1;
+    if (bNull) return -1;
+    return (av - bv) * sortDir;
+  });
+}
+
+function updateSortIndicators() {
+  els.head.querySelectorAll("th.sortable").forEach((th) => {
+    th.classList.toggle("sort-asc", th.dataset.sort === sortKey && sortDir === 1);
+    th.classList.toggle("sort-desc", th.dataset.sort === sortKey && sortDir === -1);
+  });
+}
+
 function renderTable() {
-  const rows = lastStocks.filter(
+  const filtered = lastStocks.filter(
     (s) => activeFilter === "All" || s.recommendation === activeFilter
   );
+  const rows = sortRows(filtered);
+  updateSortIndicators();
 
   if (!rows.length) {
     els.body.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">No stocks match this filter.</td></tr>`;
@@ -535,6 +574,21 @@ els.filters.addEventListener("click", (e) => {
   if (!chip) return;
   activeFilter = chip.dataset.filter;
   [...els.filters.children].forEach((c) => c.classList.toggle("active", c === chip));
+  renderTable();
+});
+
+// Click a column header to sort; click again to toggle direction.
+els.head.addEventListener("click", (e) => {
+  const th = e.target.closest("th.sortable");
+  if (!th) return;
+  const key = th.dataset.sort;
+  if (sortKey === key) {
+    sortDir *= -1;
+  } else {
+    sortKey = key;
+    // Strings default ascending (A→Z); numbers default descending (high→low).
+    sortDir = STRING_KEYS.has(key) ? 1 : -1;
+  }
   renderTable();
 });
 

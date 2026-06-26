@@ -165,6 +165,19 @@ thead th {
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 th.num, td.num { text-align: right; }
+
+/* Sortable column headers */
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--text); }
+th.sortable::after {
+  content: "⇅";
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.35;
+}
+th.sortable.sort-asc::after { content: "▲"; opacity: 1; color: var(--accent); }
+th.sortable.sort-desc::after { content: "▼"; opacity: 1; color: var(--accent); }
+
 tbody td { padding: 12px 14px; border-bottom: 1px solid rgba(42, 54, 80, 0.5); }
 tbody tr:hover { background: rgba(79, 140, 255, 0.06); }
 .sym-cell { font-weight: 700; }
