@@ -1,0 +1,22 @@
+services:
+  stocks-dashboard:
+    # Build from this directory, or replace `build` with `image:` if you push to a registry.
+    build: .
+    image: stocks-dashboard:latest
+    container_name: stocks-dashboard
+    restart: unless-stopped
+    ports:
+      # host:container — change 8501 to whatever free port you want on TrueNAS.
+      - "8501:5000"
+    volumes:
+      # Persist the per-ticker cache across restarts/updates.
+      - stocks_cache:/app/.cache
+    # Optional: cap resources so it stays a good NAS citizen.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+volumes:
+  stocks_cache:

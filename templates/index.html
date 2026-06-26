@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Analyst Recommendations</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">📈</span>
+      <div>
+        <h1>Analyst Recommendations</h1>
+        <p class="sub">Aggregated ratings &amp; daily winners / losers</p>
+      </div>
+    </div>
+    <div class="controls">
+      <input id="tickerInput" type="text" placeholder="Optional: AAPL, MSFT, NVDA…" autocomplete="off" />
+      <label class="auto-toggle" title="Automatically refresh every minute while the US market is open">
+        <input type="checkbox" id="autoRefresh" checked /> Auto-refresh
+      </label>
+      <button id="checkNow" class="btn-primary">
+        <span class="btn-label">Check now</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="status-row">
+      <div id="status" class="status"></div>
+      <span id="marketBadge" class="market-badge"></span>
+    </div>
+
+    <section class="summary-grid">
+      <div class="card counts" id="countsCard">
+        <h2>Consensus Breakdown</h2>
+        <div class="count-chips" id="countChips"></div>
+      </div>
+      <div class="card movers">
+        <h2>Top Winners</h2>
+        <ul id="winnersList" class="mover-list"></ul>
+      </div>
+      <div class="card movers">
+        <h2>Top Losers</h2>
+        <ul id="losersList" class="mover-list"></ul>
+      </div>
+    </section>
+
+    <section class="card table-card">
+      <div class="table-header">
+        <h2>All Recommendations</h2>
+        <div class="filters" id="filters">
+          <button data-filter="All" class="chip active">All</button>
+          <button data-filter="Strong Buy" class="chip">Strong Buy</button>
+          <button data-filter="Buy" class="chip">Buy</button>
+          <button data-filter="Hold" class="chip">Hold</button>
+          <button data-filter="Sell" class="chip">Sell</button>
+          <button data-filter="Strong Sell" class="chip">Strong Sell</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="stocksTable">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Company</th>
+              <th class="num">Price</th>
+              <th class="num">Day %</th>
+              <th>Recommendation</th>
+              <th class="num">Analysts</th>
+              <th class="num">Target</th>
+              <th class="num">Upside</th>
+              <th>Recent Firm Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stocksBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      Data via Yahoo Finance (aggregates analyst ratings from firms such as BofA,
+      Citi, Morgan Stanley, Morningstar). For informational purposes only — not
+      financial advice.
+    </p>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
